@@ -107,11 +107,20 @@ const importPluginPath = path.join(
 
 if (fs.existsSync(importPluginPath)) {
   let content = fs.readFileSync(importPluginPath, 'utf8');
-  if (content.includes('../../import-protection/utils.js')) {
+  
+  // Only patch if we haven't already
+  if (content.includes('import { resolveViteId } from "../../utils.js";') && content.includes('escapeRegExp,')) {
+    // Move escapeRegExp to the main utils.js import
     content = content.replace(
-      '../../import-protection/utils.js',
-      '../../utils.js'
+      'import { resolveViteId } from "../../utils.js";',
+      'import { resolveViteId, escapeRegExp } from "../../utils.js";'
     );
+    // Remove escapeRegExp from the import-protection/utils.js import
+    content = content.replace(
+      'escapeRegExp, ',
+      ''
+    );
+    
     fs.writeFileSync(importPluginPath, content, 'utf8');
     console.log('✅ Patched start-plugin-core: fixed escapeRegExp import path');
   }
