@@ -1,66 +1,74 @@
 # setup-tanstack-netlify
 
-A CLI utility to easily set up and deploy Lovable-generated TanStack Start React SSR applications to Netlify.
+A zero-config CLI utility to prepare and deploy Lovable-generated TanStack Start (React SSR) applications to Netlify in seconds.
 
-## Background
+---
 
-By default, dynamic full-stack Lovable applications configure Cloudflare Workers as their target production environment. When deploying to Netlify, this project setup leads to static routing mismatches (404 errors) and dependency conflicts with TanStack Start dependencies (missing cheerio, syntax and import runtime path mismatches).
+## The Problem
 
-This CLI automates:
-1. Detecting the package manager (`npm`, `bun`, `pnpm`, `yarn`).
-2. Installing `cheerio` as a devDependency (required by TanStack Start HTML post-processing).
-3. Writing a Netlify-compatible `netlify.toml` file with redirection and Nitro build preset configurations.
-4. Stripping Cloudflare-specific server entry point configurations from `vite.config.ts`.
-5. Creating and registering a `postinstall` script (`scripts/patch-tanstack.js`) to apply necessary hotfixes to `@tanstack/start-plugin-core` dependency issues.
-6. Excluding Netlify build caches and configuration folders from Git.
+Lovable (lovable.dev) builds dynamic full-stack applications using TanStack Start v1 (React 19 + Vite + Nitro SSR engine), configuring **Cloudflare Workers** as the default edge target. 
 
-## Usage
+If you try to deploy this project directly to Netlify:
+1. **Netlify 404 Errors**: Netlify treats the project as a static SPA, resulting in 404 "Page Not Found" errors on all SSR-rendered pages.
+2. **Third-Party Mismatches**: The default TanStack Start dependencies contain unresolved bugs (missing `cheerio` devDependency, incorrect import paths in `@tanstack/start-plugin-core`, and missing runtime configuration fallbacks).
 
-### Run via npx (Recommended)
+---
 
-Run the following command directly in the root of your Lovable-generated TanStack Start project:
+## What This CLI Does
+
+Running this tool in your target project root automates all required configuration changes:
+
+- **Auto-Detects Package Manager**: Identifies `npm`, `bun`, `pnpm`, or `yarn` via lockfiles.
+- **Installs Missing Dependencies**: Adds `cheerio` as a devDependency.
+- **Generates `netlify.toml`**: Configures Netlify with a catch-all rewrite (`/* -> /.netlify/functions/server`), Netlify-compatible Nitro presets (`NITRO_PRESET = "netlify"`), and Node 20 environment.
+- **Updates `vite.config.ts`**: Removes the Cloudflare-specific server entry point (`server: { entry: "server" }`), allowing Nitro to compile using its default Netlify-compatible entry point.
+- **Injects Post-Install Hotfixes**: Registers a lightweight `scripts/patch-tanstack.js` file and adds it to your project's `postinstall` step. This automatically patches known `@tanstack/start-plugin-core` bugs in `node_modules` (specifically fixing the `escapeRegExp` import path and adding a fallback value for `injectedHeadScripts`).
+- **Updates Git Ignore**: Appends `.netlify/` to `.gitignore` to keep local build artifacts out of Git.
+
+---
+
+## Quick Start
+
+Run the following command directly in the root directory of your Lovable-generated TanStack Start project:
 
 ```bash
 npx setup-tanstack-netlify
 ```
 
-### Local Installation & Testing
+---
 
-If you want to test or run the package locally from source:
+## Deploying to Netlify
 
-1. Clone or navigate to the package folder:
-   ```bash
-   cd lovable-tan-netlify
-   ```
+Once the setup tool completes, you can deploy your application:
 
-2. Link the command globally:
-   ```bash
-   npm link
-   ```
+### Option A: Connected Git Repository (Recommended)
+Simply commit all generated files and push them to your repository (GitHub, GitLab, etc.). When Netlify builds the site, it will read `netlify.toml`, run the postinstall patch, and build the SSR application automatically.
 
-3. Navigate to your target project root and execute the command:
-   ```bash
-   setup-tanstack-netlify
-   ```
-
-### Deploying to Netlify
-
-Once the setup is complete:
-
-1. Ensure you have the Netlify CLI installed:
-   ```bash
-   npm install -g netlify-cli
-   ```
-
-2. Link your Netlify account and project:
+### Option B: Netlify CLI
+1. Log in and link your project:
    ```bash
    netlify login
    netlify link
    ```
-
-3. Deploy using the Netlify CLI or push your changes to a Git provider (e.g. GitHub) connected to Netlify:
+2. Build and deploy:
    ```bash
-   netlify deploy --build
+   netlify deploy --build --prod
+   ```
+
+---
+
+## Local Development & Contribution
+
+If you want to contribute or modify this package locally:
+
+1. Clone this repository.
+2. Link the package globally to test changes:
+   ```bash
+   npm link
+   ```
+3. Run the CLI tool inside any test project root:
+   ```bash
+   setup-tanstack-netlify
    ```
 
 ## License
