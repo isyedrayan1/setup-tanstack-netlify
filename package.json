@@ -1,6 +1,6 @@
 {
   "name": "setup-tanstack-netlify",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "CLI tool to set up Lovable-generated TanStack Start React SSR apps for deployment on Netlify",
   "type": "module",
   "main": "./bin/cli.js",
